@@ -1,0 +1,120 @@
+/* src/ProgressSteps.css (Adapted for MUI Hybrid) */
+
+/* --- Layout for Horizontal Progress Bar --- */
+.progress-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    width: 100%;
+    padding: 20px;
+    background: #f8f9fa; /* MUI background is usually lighter, keeping custom color */
+    border-radius: 8px;
+}
+
+.progress-step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    flex: 1; 
+    text-align: center;
+    color: #6c757d;
+    transition: color 0.3s ease;
+}
+
+/* Line connector between steps (Horizontal layout only) */
+.progress-step:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    top: 15px; 
+    left: 50%;
+    width: 100%;
+    height: 2px;
+    background-color: #e9ecef;
+    z-index: 1;
+    transform: translateX(100%);
+}
+
+/* Line color for active steps (Horizontal layout only) */
+.progress-step.active:not(:last-child)::after {
+    background-color: #1976d2;
+    transition: background-color 0.3s ease;
+}
+
+/* Step Circle */
+.circle {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background-color: #adb5bd;
+    /* Color is now handled by Typography inside Box */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 2;
+    border: 3px solid #ced4da;
+    transition: all 0.3s ease;
+}
+
+/* Label Text */
+.label {
+    margin-top: 8px;
+    font-size: 0.85rem; /* Keep font-size for non-MUI Typography integration */
+    max-width: 100px;
+    line-height: 1.2;
+}
+
+/* Active/Completed Step Styles */
+.progress-step.active .circle {
+    background-color: #1976d2;
+    border-color: #1976d2;
+}
+
+.progress-step.active .label {
+    color: #1976d2;
+    font-weight: 600;
+}
+
+/* --- Styles for Vertical Progress Bar (Sidebar Layout) --- */
+.progress-step.vertical {
+    flex-direction: row; 
+    align-items: flex-start;
+    margin-bottom: 25px; 
+    padding-left: 10px;
+    width: auto;
+}
+
+/* Hide the horizontal line for the vertical layout */
+.progress-step.vertical::after {
+    display: none;
+}
+
+/* Vertical line connector */
+.progress-step.vertical:not(:last-child)::before {
+    content: '';
+    position: absolute;
+    top: 30px; 
+    left: 24px; 
+    width: 2px;
+    height: calc(100% - 30px); 
+    background-color: #e9ecef;
+    z-index: 1;
+}
+
+/* Vertical active line color */
+.progress-step.vertical.active:not(:last-child)::before {
+    background-color: #1976d2;
+    transition: background-color 0.3s ease;
+}
+
+/* Adjust circle positioning for vertical layout */
+.progress-step.vertical .circle {
+    margin-right: 15px; 
+    flex-shrink: 0;
+}
+
+/* Adjust label positioning for vertical layout */
+.progress-step.vertical .label {
+    text-align: left;
+    max-width: none; 
+}

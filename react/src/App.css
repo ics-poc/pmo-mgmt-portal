@@ -1,0 +1,37 @@
+/* src/App.css */
+
+.App {
+  max-width: 1000px; /* Limits the width of the application */
+  margin: 0 auto; /* Centers the whole app container */
+  padding: 20px;
+  font-family: Arial, sans-serif;
+  color: #333;
+}
+
+h1 {
+  font-size: 2.5em;
+  font-weight: bold;
+  border-bottom: 2px solid #eee;
+  padding-bottom: 10px;
+}
+
+/* This is essential for placing the upload and skill input side-by-side */
+.controls-container {
+  display: flex;
+  gap: 20px; /* Space between the two main control boxes */
+  margin-top: 30px;
+}
+
+/* Ensures both sections take equal width */
+.controls-container > div {
+  flex: 1; 
+}
+
+/* Basic styling for the main button */
+button {
+  transition: background-color 0.2s;
+}
+
+button:hover:not(:disabled) {
+  opacity: 0.9;
+}
