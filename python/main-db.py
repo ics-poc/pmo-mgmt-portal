@@ -97,14 +97,14 @@ async def match_skills(autoReqId: str = Form(...)):
 
         # Pull employee skill data from database
         emp_query = """
-            SELECT emp_no, emp_name, grade, top_3_skills, skill_bucket, detailed_skills
+            SELECT emp_no, emp_name, grade, top_3_skills, skills_bucket, detailed_skills
             FROM pmo.employees
         """
         df = pd.read_sql(emp_query, db.connection())
         df.columns = [c.strip().lower() for c in df.columns]
 
         # Combine relevant text fields
-        text_fields = ["emp_no", "emp_name", "grade", "top_3_skills", "skill_bucket", "detailed_skills"]
+        text_fields = ["emp_no", "emp_name", "grade", "top_3_skills", "skills_bucket", "detailed_skills"]
         profile_texts = df[text_fields].astype(str).agg(" ".join, axis=1).tolist()
 
         # Generate embeddings for profiles
@@ -159,7 +159,7 @@ async def match_skills(autoReqId: str = Form(...)):
             grade_wt = compute_grade_weight(row["grade"])
 
             t3 = str(row["top_3_skills"]).lower()
-            sb = str(row["skill_bucket"]).lower()
+            sb = str(row["skills_bucket"]).lower()
             ds = str(row["detailed_skills"]).lower()
 
             depth_boost = 1.0
@@ -205,7 +205,7 @@ async def match_skills(autoReqId: str = Form(...)):
                 "employeeName": str(top_profiles.iloc[j].get("emp_name", "")),
                 "grade": str(top_profiles.iloc[j].get("grade", "")),
                 "top3Skills": str(top_profiles.iloc[j].get("top_3_skills", "")),
-                "skillBucket": str(top_profiles.iloc[j].get("skill_bucket", "")),
+                "skillBucket": str(top_profiles.iloc[j].get("skills_bucket", "")),
                 "detailedSkills": str(top_profiles.iloc[j].get("detailed_skills", "")),
                 "match%": round(float(top_scores[j]), 2),
                 "skillMatch%": skill_breakdown
