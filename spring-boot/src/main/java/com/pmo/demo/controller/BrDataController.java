@@ -17,9 +17,9 @@ import com.pmo.demo.domain.BrData;
 import com.pmo.demo.service.BrDataService;
 
 @RestController
-@CrossOrigin(origins = "http://localhost:3000")
 @RequestMapping("/brdata")
 public class BrDataController {
+	
 	private final BrDataService brDataService;
 
 	public BrDataController(BrDataService brDataService) {
@@ -37,7 +37,7 @@ public class BrDataController {
 		return ResponseEntity.ok(data);
 	}
 	
-	@PostMapping(value= "/br-data", consumes = "multipart/form-data")
+	@PostMapping(value= "/upload", consumes = "multipart/form-data")
     public ResponseEntity<Map<String, Object>> uploadBrData(@RequestParam("file") MultipartFile file) {
         return ResponseEntity.ok(brDataService.uploadBrData(file));
     }

@@ -9,8 +9,6 @@ import io
 import traceback
 from sklearn.metrics.pairwise import cosine_similarity
 import re
-# from database import SessionLocal, engine, Base
-
 
 from sqlalchemy import select
 from database import SessionLocal

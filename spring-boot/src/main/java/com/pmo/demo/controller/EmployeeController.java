@@ -17,7 +17,6 @@ import com.pmo.demo.domain.Employee;
 import com.pmo.demo.service.EmployeeService;
 
 @RestController
-@CrossOrigin(origins = "http://localhost:3000")
 @RequestMapping("/employee")
 public class EmployeeController {
 	private final EmployeeService employeeService;
@@ -37,7 +36,7 @@ public class EmployeeController {
 		return ResponseEntity.ok(employee);
 	}
 	
-	@PostMapping(value= "/employees", consumes = "multipart/form-data")
+	@PostMapping(value= "/upload", consumes = "multipart/form-data")
     public ResponseEntity<Map<String, Object>> uploadEmployees(@RequestParam("file") MultipartFile file) {
         return ResponseEntity.ok(employeeService.uploadEmployees(file));
     }
