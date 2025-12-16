@@ -1,8 +1,5 @@
 package com.pmo.demo.entity;
 
-import java.math.BigDecimal;
-import java.sql.Timestamp;
-
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;

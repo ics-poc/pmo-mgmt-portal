@@ -38,8 +38,8 @@ public class EmployeeEntity {
     @Column(name = "appraisal_rating", length = 50)
     private String appraisalRating;
 
-    @Column(name = "rm_name", length = 255)
-    private String rmName;
+    @Column(name = "previous_rm_name", length = 255)
+    private String previousRmName;
 
     @Column(name = "br")
     private String br;
@@ -68,8 +68,8 @@ public class EmployeeEntity {
     @Column(name = "skills_category", length = 255)
     private String skillsCategory;
 
-    @Column(name = "skill_bucket", length = 255)
-    private String skillBucket;
+    @Column(name = "skills_bucket", length = 255)
+    private String skillsBucket;
 
     @Column(name = "detailed_skills", columnDefinition = "TEXT")
     private String detailedSkills;
@@ -81,7 +81,7 @@ public class EmployeeEntity {
     private LocalDate receivedDate;
 
     @Column(name = "lwd")
-    private String lwd;
+    private LocalDate lwd;
 
     @Column(name = "status", length = 100)
     private String status;

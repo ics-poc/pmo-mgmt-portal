@@ -1,7 +1,6 @@
 package com.pmo.demo.domain;
 
 import java.math.BigDecimal;
-import java.sql.Date;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 

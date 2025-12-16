@@ -18,6 +18,7 @@ import com.pmo.demo.service.BrDataService;
 
 @RestController
 @RequestMapping("/brdata")
+@CrossOrigin(origins = "http://localhost:3000")
 public class BrDataController {
 	
 	private final BrDataService brDataService;

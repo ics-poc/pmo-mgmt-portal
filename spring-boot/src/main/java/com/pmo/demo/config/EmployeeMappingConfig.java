@@ -9,12 +9,13 @@ import org.springframework.context.annotation.Configuration;
 
 import lombok.Data;
 
-@Configuration 
+@Configuration
 @ConfigurationProperties(prefix = "employee")
 @Data
 public class EmployeeMappingConfig {
 
-	private List<String> columns;
+    private String entityName;
+    private List<String> columns;
 
     public Map<Integer, String> getIndexedColumns() {
         Map<Integer, String> map = new LinkedHashMap<>();

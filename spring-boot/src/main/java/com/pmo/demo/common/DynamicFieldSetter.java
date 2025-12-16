@@ -11,7 +11,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class DynamicFieldSetter {
 
-	public void setField(Object entity, String fieldName, String rawValue) {
+    public void setField(Object entity, String fieldName, String rawValue) {
         if (fieldName == null || fieldName.isBlank()) return;
 
         try {
@@ -21,7 +21,7 @@ public class DynamicFieldSetter {
             Class<?> type = field.getType();
 
             if (type.equals(String.class)) {
-                field.set(entity, rawValue);
+                field.set(entity, clean(rawValue));
 
             } else if (type.equals(Integer.class)) {
                 field.set(entity, parseInt(rawValue));
@@ -36,7 +36,7 @@ public class DynamicFieldSetter {
                 field.set(entity, parseTimestamp(rawValue));
 
             } else {
-                field.set(entity, rawValue); 
+                field.set(entity, rawValue);
             }
 
         } catch (NoSuchFieldException ignored) {
@@ -45,23 +45,77 @@ public class DynamicFieldSetter {
         }
     }
 
+    private String clean(String v) {
+        return (v == null) ? null : v.trim();
+    }
+
     private Integer parseInt(String v) {
-        try { return (v == null || v.isBlank()) ? null : Integer.parseInt(v.split("\\.")[0]); }
-        catch (Exception e) { return null; }
+        try {
+            if (v == null || v.isBlank()) return null;
+            return Integer.parseInt(v.replaceAll("[^0-9-]", ""));
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     private BigDecimal parseDecimal(String v) {
-        try { return (v == null || v.isBlank()) ? null : new BigDecimal(v.trim()); }
-        catch (Exception e) { return null; }
+        try {
+            if (v == null || v.isBlank()) return null;
+
+            String cleaned = v.replaceAll("[^0-9.]", "");
+            if (cleaned.isBlank()) return BigDecimal.ZERO;
+
+            return new BigDecimal(cleaned);
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     private LocalDate parseLocalDate(String v) {
-        try { return (v == null || v.isBlank()) ? null : LocalDate.parse(v, DateTimeFormatter.ofPattern("dd-MMM-yy")); }
-        catch (Exception e) { return null; }
+        try {
+            if (v == null || v.isBlank()) return null;
+
+            if (v.matches("\\d+(\\.\\d+)?")) {
+                double excelDate = Double.parseDouble(v);
+                return LocalDate.of(1899, 12, 30).plusDays((long) excelDate);
+            }
+
+            DateTimeFormatter[] formats = new DateTimeFormatter[] {
+                DateTimeFormatter.ofPattern("dd-MMM-yy"),
+                DateTimeFormatter.ofPattern("dd-MM-yyyy"),
+                DateTimeFormatter.ofPattern("dd/MM/yyyy"),
+                DateTimeFormatter.ofPattern("yyyy-MM-dd"),
+                DateTimeFormatter.ofPattern("MM/dd/yyyy")
+            };
+
+            for (DateTimeFormatter f : formats) {
+                try {
+                    return LocalDate.parse(v.trim(), f);
+                } catch (Exception ignored) {}
+            }
+
+            return null;
+
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     private Timestamp parseTimestamp(String v) {
-        try { return (v == null || v.isBlank()) ? null : Timestamp.valueOf(v); }
-        catch (Exception e) { return null; }
+        try {
+            if (v == null || v.isBlank()) return null;
+
+            if (v.matches("\\d+(\\.\\d+)?")) {
+                double excelDate = Double.parseDouble(v);
+                LocalDate date = LocalDate.of(1899, 12, 30).plusDays((long) excelDate);
+                return Timestamp.valueOf(date.atStartOfDay());
+            }
+
+            return Timestamp.valueOf(v.trim());
+
+        } catch (Exception e) {
+            return null;
+        }
     }
 }
+

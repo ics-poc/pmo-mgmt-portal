@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -24,7 +25,9 @@ import com.pmo.demo.common.DynamicFieldSetter;
 import com.pmo.demo.config.BrDataMappingConfig;
 import com.pmo.demo.domain.BrData;
 import com.pmo.demo.entity.BrDataEntity;
+import com.pmo.demo.entity.HeaderFieldMappingEntity;
 import com.pmo.demo.repository.BrDataRepository;
+import com.pmo.demo.repository.HeaderFieldMappingRepository;
 import com.pmo.demo.service.BrDataService;
 
 import lombok.RequiredArgsConstructor;
@@ -33,11 +36,12 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class BrDataServiceImpl implements BrDataService {
 
-	private final BrDataRepository brRepo;
-	private final BrDataMappingConfig config;
+    private final BrDataRepository brRepo;
+    private final BrDataMappingConfig config;
     private final DynamicFieldSetter setter;
     private final BeanMapper mapper;
-    
+    private final HeaderFieldMappingRepository headerMappingRepo;
+
     @Value("${brdata.sheet-name}")
     private String brSheetName;
 
@@ -56,28 +60,36 @@ public class BrDataServiceImpl implements BrDataService {
         try (BufferedReader br = new BufferedReader(new InputStreamReader(file.getInputStream()));
              CSVParser parser = CSVFormat.DEFAULT
                      .builder()
-                     .setSkipHeaderRecord(true)
                      .setTrim(true)
                      .build()
                      .parse(br)) {
 
-            boolean first = true;
+            Map<String, String> normalizedFieldMap = buildNormalizedFieldMap();
+            Map<Integer, String> indexToField = new HashMap<>();
+
+            boolean headerProcessed = false;
 
             for (CSVRecord row : parser) {
 
-                if (first) { 
-                    first = false; 
+                if (!headerProcessed) {
+                    for (int i = 0; i < row.size(); i++) {
+                        String header = normalize(row.get(i));
+                        if (normalizedFieldMap.containsKey(header)) {
+                            indexToField.put(i, normalizedFieldMap.get(header));
+                        }
+                    }
+                    headerProcessed = true;
                     continue;
                 }
 
                 try {
-                    String id = stripBom(safe(getCsvValue(row, 0))); 
-
+                    String id = stripBom(safe(row.get(0)));
                     if (id.isBlank()) { skipped++; continue; }
 
                     BrDataEntity e = brRepo.findById(id).orElse(new BrDataEntity());
 
                     if (e.getCreatedDate() == null) {
+                        e.setAutoReqId(id);
                         e.setCreatedBy("admin");
                         e.setCreatedDate(new Timestamp(System.currentTimeMillis()));
                     } else {
@@ -85,15 +97,15 @@ public class BrDataServiceImpl implements BrDataService {
                         e.setModifiedDate(new Timestamp(System.currentTimeMillis()));
                     }
 
-                    for (Map.Entry<Integer, String> entry : config.getIndexedColumns().entrySet()) {
-                        int colIndex = entry.getKey();
-                        String fieldName = entry.getValue();
-
-                        String value = stripBom(safe(getCsvValue(row, colIndex)));
-                        setter.setField(e, fieldName, value);
+                    for (Map.Entry<Integer, String> entry : indexToField.entrySet()) {
+                        String value = stripBom(safe(row.get(entry.getKey())));
+                        setter.setField(e, entry.getValue(), value);
                     }
 
-                    e.setAutoReqId(id);
+                    if (e.getAutoReqId() == null || e.getAutoReqId().isBlank()) {
+                        throw new RuntimeException("Missing required field: autoReqId");
+                    }
+
                     brRepo.save(e);
                     uploaded++;
 
@@ -110,35 +122,38 @@ public class BrDataServiceImpl implements BrDataService {
         return Map.of("status", "done", "uploaded", uploaded, "skipped", skipped, "errors", errors);
     }
 
-    private String getCsvValue(CSVRecord r, int index) {
-        try { return r.get(index); }
-        catch (Exception e) { return ""; }
-    }
-    
-    private String stripBom(String s) {
-        if (s == null) return "";
-        return s.replace("\uFEFF", "");
-    }
 
     private Map<String, Object> parseExcel(MultipartFile file) {
         int uploaded = 0, skipped = 0;
         List<String> errors = new ArrayList<>();
 
         try (Workbook wb = new XSSFWorkbook(file.getInputStream())) {
+
             Sheet sheet = wb.getSheet(brSheetName);
             if (sheet == null) throw new RuntimeException("Sheet '" + brSheetName + "' not found");
+
+            Map<String, String> normalizedFieldMap = buildNormalizedFieldMap();
+            Map<Integer, String> indexToField = new HashMap<>();
+
+            Row headerRow = sheet.getRow(0);
+            for (int i = 0; i < headerRow.getLastCellNum(); i++) {
+                String header = normalize(getCell(headerRow, i));
+                if (normalizedFieldMap.containsKey(header)) {
+                    indexToField.put(i, normalizedFieldMap.get(header));
+                }
+            }
 
             for (Row row : sheet) {
                 if (row.getRowNum() == 0) continue;
 
                 try {
-                    String id = getCell(row, 0);
+                    String id = stripBom(safe(getCell(row, 0)));
                     if (id.isBlank()) { skipped++; continue; }
 
                     BrDataEntity e = brRepo.findById(id).orElse(new BrDataEntity());
 
                     if (e.getCreatedDate() == null) {
-                    	e.setAutoReqId(id);
+                        e.setAutoReqId(id);
                         e.setCreatedBy("admin");
                         e.setCreatedDate(new Timestamp(System.currentTimeMillis()));
                     } else {
@@ -146,16 +161,15 @@ public class BrDataServiceImpl implements BrDataService {
                         e.setModifiedDate(new Timestamp(System.currentTimeMillis()));
                     }
 
-                    for (Map.Entry<Integer, String> entry : config.getIndexedColumns().entrySet()) {
-
-                        int colIndex = entry.getKey();
-                        String fieldName = entry.getValue();
-
-                        String value = getCell(row, colIndex);
-                        setter.setField(e, fieldName, value);
+                    for (Map.Entry<Integer, String> entry : indexToField.entrySet()) {
+                        String value = safe(getCell(row, entry.getKey()));
+                        setter.setField(e, entry.getValue(), value);
                     }
 
-                    e.setAutoReqId(id);
+                    if (e.getAutoReqId() == null || e.getAutoReqId().isBlank()) {
+                        throw new RuntimeException("Missing required field: autoReqId");
+                    }
+
                     brRepo.save(e);
                     uploaded++;
 
@@ -172,8 +186,47 @@ public class BrDataServiceImpl implements BrDataService {
         return Map.of("status", "done", "uploaded", uploaded, "skipped", skipped, "errors", errors);
     }
 
+    private String safe(String v) {
+        return v == null ? "" : v.trim();
+    }
 
-    private String safe(String v) { return v == null ? "" : v.trim(); }
+    private String stripBom(String s) {
+        return s == null ? "" : s.replace("\uFEFF", "");
+    }
+
+    private String getCell(Row row, int colIndex) {
+        try {
+            Cell c = row.getCell(colIndex);
+            return c == null ? "" : c.toString().trim();
+        } catch (Exception e) {
+            return "";
+        }
+    }
+
+    private String normalize(String s) {
+        if (s == null) return "";
+        return s
+                .replace("\uFEFF", "")
+                .trim()
+                .toLowerCase()
+                .replaceAll("[^a-z0-9]", "");
+    }
+
+    private Map<String, String> buildNormalizedFieldMap() {
+        Map<String, String> map = new HashMap<>();
+
+        List<HeaderFieldMappingEntity> mappings =
+                headerMappingRepo.findByEntityNameAndActiveTrue(config.getEntityName());
+
+        for (HeaderFieldMappingEntity m : mappings) {
+            map.put(
+                normalize(m.getHeaderName()),
+                m.getEntityFieldName()
+            );
+        }
+
+        return map;
+    }
 
     @Override
     public List<BrData> getAllData() {
@@ -188,14 +241,4 @@ public class BrDataServiceImpl implements BrDataService {
                 .map(e -> mapper.copy(e, new BrData()))
                 .orElseThrow(() -> new RuntimeException("BR Data not found for ID: " + autoReqId));
     }
-    
-    private String getCell(Row row, int colIndex) {
-        try {
-            Cell c = row.getCell(colIndex);
-            return c == null ? "" : c.toString().trim();
-        } catch (Exception e) {
-            return "";
-        }
-    }
-
 }

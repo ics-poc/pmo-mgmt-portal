@@ -38,7 +38,7 @@ public class Employee {
     private String detailedSkills;
     private Date infiniteDoj;
     private Date receivedDate;
-    private String lwd;
+    private Date lwd;
     private String status;
     private String remarks;
     private String deployedExitMonth;
