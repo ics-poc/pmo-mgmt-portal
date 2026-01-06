@@ -5,37 +5,49 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.UUID;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.pmo.demo.entity.TempLoginToken;
 import com.pmo.demo.repository.TempLoginTokenRepository;
+import com.pmo.demo.service.EmailService;
 import com.pmo.demo.service.TempLoginService;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class TempLoginServiceImpl implements TempLoginService{
 
-	@Autowired
-    private TempLoginTokenRepository tokenRepository;
+	private final TempLoginTokenRepository tokenRepository;
+    private final EmailService emailService;
 
-	@Override
-    public String createTempLoginLink(String email) {
+    @Override
+    public void createTempLoginLink(String email, String redirectPath) {
+
+        if (redirectPath == null || !redirectPath.startsWith("/")) {
+            throw new IllegalArgumentException("Invalid redirect path");
+        }
 
         String token = UUID.randomUUID().toString();
 
-        TempLoginToken tokenEntity = new TempLoginToken();
-        tokenEntity.setEmail(email);
-        tokenEntity.setToken(token);
-
-        tokenEntity.setExpiresAt(
-                Timestamp.from(Instant.now().plus(Duration.ofMinutes(30)))
+        TempLoginToken entity = new TempLoginToken();
+        entity.setEmail(email);
+        entity.setToken(token);
+        entity.setRedirectPath(redirectPath);
+        entity.setExpiresAt(
+            Timestamp.from(Instant.now().plus(Duration.ofMinutes(30)))
         );
 
-        tokenRepository.save(tokenEntity);
+        tokenRepository.save(entity);
 
-        return "https://yourapp.com/temp-login?token=" + token;
+        String link = "http://localhost:3000/temp-login?token=" + token;
+
+        try {
+            emailService.sendMagicLink(email, link);
+        } catch (Exception e) {
+            log.error("Email sending failed, token still created", e);
+        }
     }
 }

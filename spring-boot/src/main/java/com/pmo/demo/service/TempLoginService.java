@@ -2,5 +2,5 @@ package com.pmo.demo.service;
 
 public interface TempLoginService {
 
-	public String createTempLoginLink(String email);
+	void createTempLoginLink(String email, String redirectPath);
 }

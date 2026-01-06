@@ -3,6 +3,7 @@
 // /** Base URL for your Node server */
 export const API_URL = 'http://localhost:8081'; 
 export const AI_API_URL = 'http://localhost:8000';
+export const NODE_API_URL = 'http://localhost:3001';
 
 // /** Global Back Button Style used across multiple components */
 export const ICON_BACK_BUTTON_STYLE = {

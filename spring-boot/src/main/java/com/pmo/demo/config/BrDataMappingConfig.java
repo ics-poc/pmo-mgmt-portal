@@ -14,7 +14,7 @@ import lombok.Data;
 @Data
 public class BrDataMappingConfig {
 
-    private String entityName;      // 👈 ADD THIS
+    private String entityName;      
     private List<String> columns;
 
     public Map<Integer, String> getIndexedColumns() {

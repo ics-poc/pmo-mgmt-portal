@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# macOS
+.DS_Store
+
+# Logs
+*.log
+
+# Temp directories
+tmp/
+cache/
+
+# FAISS artifacts (optional)
+*.index
+*.pkl
+
+# Virtual environments
+venv/
+.env/
+
+# API keys and secrets
+.env

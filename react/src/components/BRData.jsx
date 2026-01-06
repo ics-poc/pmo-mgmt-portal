@@ -103,15 +103,14 @@ const handleViewDetails = async (row) => {
       }
       const result = await response.json();
 
-      const mappedData = result.data.map((r) => ({
-        client: r.client,
-        brId: r.brId,
+      const mappedData = result.map((r) => ({
+        client: r.clientName,
+        brId: r.autoReqId,
         grade: r.grade,
-        skills: r.skills,
-        id: r.brId,
-        fileName: r.fileName,
-        status: r.status,
-        resources: r.noOfOpenings,
+        skills: r.mandatorySkills,
+        id: r.autoReqId,
+        status: r.currentReqStatus,
+        resources: r.noOfPositions,
       }));
 
       setParsedData(mappedData);

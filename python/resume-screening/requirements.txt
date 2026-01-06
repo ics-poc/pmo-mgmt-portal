@@ -1,0 +1,16 @@
+pandas
+openpyxl
+python-dotenv
+openai
+huggingface_hub
+pdfplumber
+faiss-cpu
+fastapi
+uvicorn
+jinja2
+numpy
+pydantic
+python-multipart
+PyPDF2
+python-docx
+reportlab

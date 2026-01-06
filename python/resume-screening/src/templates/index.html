@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Infinite Resume Selector</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+
+    <!-- SheetJS for Excel download -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+
+    <style>
+        /* Scrollable results container */
+        #results {
+            margin-top: 20px;
+            max-height: 500px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            padding: 10px;
+            background: #fff;
+        }
+
+        /* Excel download button */
+        #downloadBtn {
+            display: none; /* hidden until results arrive */
+            margin-top: 15px;
+            padding: 8px 16px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        #downloadBtn:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+
+<body>
+
+<!-- Top Navigation Bar -->
+<div class="navbar">
+    <img src="/static/images/logo.png" alt="Logo">
+    <div class="navbar-title">Smart Resume Matcher</div>
+</div>
+
+<div class="container">
+    <h1>Upload Job Description File</h1>
+
+    <form id="uploadForm">
+        <input type="file" id="jdFile" name="file" accept=".xlsx,.xls" required>
+        <button type="submit">Upload</button>
+    </form>
+
+    <!-- Download to Excel button -->
+    <button id="downloadBtn">Download Results as Excel</button>
+
+    <div id="results"></div>
+</div>
+
+<script>
+document.getElementById("uploadForm").onsubmit = async (e) => {
+    e.preventDefault();
+
+    const fileInput = document.getElementById("jdFile");
+    const resultsDiv = document.getElementById("results");
+    const downloadBtn = document.getElementById("downloadBtn");
+
+    const formData = new FormData();
+    formData.append("file", fileInput.files[0]);
+
+    resultsDiv.innerHTML = "<em>Processing...</em>";
+
+    try {
+        const response = await fetch("/search_resumes", {
+            method: "POST",
+            body: formData
+        });
+
+        const html = await response.text();
+        resultsDiv.innerHTML = html;
+
+        // Show download button
+        downloadBtn.style.display = "inline-block";
+
+    } catch (err) {
+        resultsDiv.innerHTML =
+            `<p style="color:red;">Error while processing request: ${err}</p>`;
+    }
+};
+
+
+/* --------------------------
+   DOWNLOAD TO EXCEL FEATURE
+--------------------------- */
+document.getElementById("downloadBtn").onclick = function () {
+    const table = document.querySelector("#results table");
+
+    if (!table) {
+        alert("No results available to download.");
+        return;
+    }
+
+    // Convert HTML table to a workbook
+    const wb = XLSX.utils.table_to_book(table, { sheet: "Matches" });
+
+    // Download Excel file
+    XLSX.writeFile(wb, "resume_matches.xlsx");
+};
+</script>
+
+</body>
+</html>

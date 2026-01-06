@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Resume Matcher V2</title>
+  <link rel="stylesheet" href="/static/css/styles.css">
+  <style>
+    /* Container improvements */
+    .container {
+      max-width: 1100px;
+      margin: 40px auto;
+      background: white;
+      padding: 28px;
+      border-radius: 10px;
+      box-shadow: 0 6px 24px rgba(14, 30, 37, 0.08);
+    }
+
+    h2 {
+      margin: 0 0 20px 0;
+      font-size: 28px;
+      text-align: left;
+    }
+
+    /* Form grid for neat alignment */
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px 28px;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    /* Make resume ZIP appear on the next row */
+    .form-row {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    label {
+      font-weight: 600;
+      color: #1f2937;
+    }
+
+    input[type="file"] {
+      padding: 8px;
+      font-size: 15px;
+    }
+
+    /* Center the button on its own row */
+    .form-actions {
+      display: flex;
+      justify-content: center;
+      margin-top: 6px;
+      grid-column: 1 / -1; /* span full width */
+    }
+
+    button.search-btn {
+      background: #2563eb;
+      color: #fff;
+      border: none;
+      padding: 12px 26px;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    button.search-btn:hover {
+      background: #1d4ed8;
+    }
+
+    /* Results area */
+    #results_v2 {
+      margin-top: 20px;
+      max-height: 520px;
+      overflow-y: auto;
+      padding: 12px;
+      border-radius: 8px;
+      background: #f6fbff;
+      border: 1px solid #e6f0ff;
+    }
+
+    /* Responsive: stack to single column on narrow screens */
+    @media (max-width: 780px) {
+      .form-grid {
+        grid-template-columns: 1fr;
+      }
+      .form-actions {
+        padding-top: 8px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="navbar">
+      <img src="/static/images/logo.png" alt="Logo">
+      <div class="navbar-title">Smart Resume Matcher – V2</div>
+  </div>
+
+  <div class="container">
+    <h2>Upload JD Excel + Your Custom Resumes (ZIP)</h2>
+
+    <form id="uploadFormV2">
+      <div class="form-grid">
+        <!-- JD Upload (left column) -->
+        <div class="form-row">
+          <label for="jdFileV2">Upload JD Excel</label>
+          <input type="file" id="jdFileV2" name="jd_file" accept=".xlsx,.xls" required>
+        </div>
+
+        <!-- (empty placeholder keeps grid balanced on wide screens) -->
+        <div style="display:block;"></div>
+
+        <!-- Resume ZIP (spans next row) -->
+        <div class="form-row" style="grid-column: 1 / -1;">
+          <label for="zipFileV2">Upload Resume ZIP</label>
+          <input type="file" id="zipFileV2" name="resume_zip" accept=".zip" required>
+        </div>
+
+        <!-- Actions: button centered across full width -->
+        <div class="form-actions">
+          <button type="submit" class="search-btn">Search</button>
+        </div>
+      </div>
+    </form>
+
+    <div id="results_v2"></div>
+
+    <div id="downloadButtonsV2" style="margin-top:20px; display:none;">
+        <button onclick="downloadExcelV2()">Download Excel</button>
+        <button onclick="downloadPdfV2()">Download PDF</button>
+    </div>
+
+  </div>
+
+  <script src="/static/js/v2.js"></script>
+
+</body>
+</html>

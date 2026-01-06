@@ -1,8 +1,11 @@
 package com.pmo.demo.controller;
 
 import java.sql.Timestamp;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -18,7 +21,8 @@ import com.pmo.demo.service.TempLoginService;
 import com.pmo.demo.service.UserService;
 
 @RestController
-@RequestMapping("/api/auth")
+@CrossOrigin(origins = "http://localhost:3000")
+@RequestMapping("/auth")
 public class UserController {
 
 	@Autowired
@@ -30,7 +34,6 @@ public class UserController {
     @Autowired
     private TempLoginTokenRepository tokenRepository;
     
-
     @PostMapping("/login")
     public UserEntity login(@RequestBody LoginRequest loginRequest) {
 
@@ -41,23 +44,30 @@ public class UserController {
     }
 
     @PostMapping("/create-temp-url")
-    public String createTempUrl(@RequestParam String email) {
-        return tempLoginService.createTempLoginLink(email);
+    public ResponseEntity<String> createTempUrl(
+            @RequestParam String email,
+            @RequestParam String redirectPath
+    ) {
+        tempLoginService.createTempLoginLink(email, redirectPath);
+        return ResponseEntity.ok("Mail sent");
     }
-    
+
     @GetMapping("/temp-login")
-    public String validateTempLogin(@RequestParam String token) {
+    public ResponseEntity<?> validateTempLogin(@RequestParam String token) {
 
         TempLoginToken tok = tokenRepository.findByToken(token);
 
         if (tok == null) {
-            return "Invalid link";
+            return ResponseEntity.badRequest().body("Invalid link");
         }
 
         if (tok.getExpiresAt().before(new Timestamp(System.currentTimeMillis()))) {
-            return "Link expired";
+            return ResponseEntity.badRequest().body("Link expired");
         }
-        
-        return "Login successful for: " + tok.getEmail();
+
+        return ResponseEntity.ok(Map.of(
+                "email", tok.getEmail(),
+                "redirectPath", tok.getRedirectPath()
+        ));
     }
 }

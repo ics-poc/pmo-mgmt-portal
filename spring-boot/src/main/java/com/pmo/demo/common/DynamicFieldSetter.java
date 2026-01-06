@@ -52,11 +52,14 @@ public class DynamicFieldSetter {
     private Integer parseInt(String v) {
         try {
             if (v == null || v.isBlank()) return null;
-            return Integer.parseInt(v.replaceAll("[^0-9-]", ""));
+
+            BigDecimal bd = new BigDecimal(v.trim());
+            return bd.intValue(); 
         } catch (Exception e) {
             return null;
         }
     }
+
 
     private BigDecimal parseDecimal(String v) {
         try {

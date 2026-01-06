@@ -58,6 +58,9 @@ public class EmployeeEntity {
 
     @Column(name = "previous_client", length = 200)
     private String previousClient;
+    
+    @Column(name = "sbu", length = 200)
+    private String sbu;
 
     @Column(name = "top_3_skills", columnDefinition = "TEXT")
     private String top3Skills;

@@ -73,8 +73,9 @@ async def match_skills(autoReqId: str = Form(...)):
     """
     try:
         import re
+        result = None
 
-        db: Session = SessionLocal()
+        dba: Session = SessionLocal()
 
         br_query = """
             select auto_req_id, client_name, grade, mandatory_skills from pmo.br_data 
@@ -83,7 +84,7 @@ async def match_skills(autoReqId: str = Form(...)):
         print('***************************')
         print('autoReqId :: ' , autoReqId)
         print('***************************')
-        df_br = pd.read_sql(br_query, db.connection(), params=(autoReqId,))
+        df_br = pd.read_sql(br_query, dba.connection(), params=(autoReqId,))
 
         if not df_br.empty:
             auto_req_id = df_br.loc[0, "auto_req_id"]
@@ -92,8 +93,28 @@ async def match_skills(autoReqId: str = Form(...)):
             skills = df_br.loc[0, "mandatory_skills"]
 
             print(auto_req_id, client_name, grade, skills)
+            result = await match_skills(auto_req_id, client_name, grade, skills)
+            return result
         else:
              raise ValueError("No BR Data is provided.")
+
+    except Exception as e:
+        print("❌ SERVER ERROR MAIN:", e)
+        traceback.print_exc()
+        return {"error": str(e), "trace": traceback.format_exc()}
+
+@app.post("/match-skills/edit")
+async def match_skills(
+        auto_req_id: str = Form(...),
+        client_name: str = Form(...), 
+        grade: str = Form(...),
+        skills: str = Form(...)
+    ):
+
+    try:
+        import re
+        db: Session = SessionLocal()
+        print(auto_req_id, client_name, grade, skills)
 
         # Pull employee skill data from database
         emp_query = """
@@ -109,7 +130,6 @@ async def match_skills(autoReqId: str = Form(...)):
 
         # Generate embeddings for profiles
         profile_embs = np.array(embed_texts(profile_texts))
-
         # Parse user-entered skills
         skill_list = [s.strip() for s in re.split(r"[,+]", skills) if s.strip()]
         if not skill_list:
@@ -117,7 +137,6 @@ async def match_skills(autoReqId: str = Form(...)):
 
         # Embeddings for each entered skill
         skill_embs = np.array(embed_texts(skill_list))
-
         # Compute per-skill similarity
         per_skill_scores = []
         for skill_emb in skill_embs:
@@ -127,7 +146,6 @@ async def match_skills(autoReqId: str = Form(...)):
 
         per_skill_scores = np.array(per_skill_scores)
         base_avg_sims = np.mean(per_skill_scores, axis=0)
-
         # ------------------------------------------------------
         # Grade Weighting + Skill Depth Analysis
         # ------------------------------------------------------
@@ -154,7 +172,6 @@ async def match_skills(autoReqId: str = Form(...)):
                 return 0.80
 
         weighted_scores = []
-
         for idx, row in df.iterrows():
             grade_wt = compute_grade_weight(row["grade"])
 
@@ -184,7 +201,6 @@ async def match_skills(autoReqId: str = Form(...)):
             weighted_scores.append(final_score)
 
         weighted_scores = np.array(weighted_scores)
-
         # Pick top 4 profiles
         top_idx = weighted_scores.argsort()[::-1][:15]
         top_profiles = df.iloc[top_idx].reset_index(drop=True)
@@ -210,7 +226,6 @@ async def match_skills(autoReqId: str = Form(...)):
                 "match%": round(float(top_scores[j]), 2),
                 "skillMatch%": skill_breakdown
             })
-        
         return {"autoReqid": auto_req_id, "clientName": client_name, 
                 "grade":grade,  "skills": skills, "results": results}
 

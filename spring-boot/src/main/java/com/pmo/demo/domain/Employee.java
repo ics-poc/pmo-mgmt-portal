@@ -31,6 +31,7 @@ public class Employee {
     private String phoneNumber;
     private String businessUnit;
     private String client;
+    private String sbu;
     private String top3Skills;
     private String ratingOutOf10ForTop3Skills;
     private String skillsCategory;

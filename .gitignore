@@ -1,5 +1,10 @@
-python/__pycache__/
-python/venv/
+python/candidate-shortlist/__pycache__/
+python/candidate-shortlist/venv/
+python/candidate-shortlist/.env
+python/resume-screening/__pycache__/
+python/resume-screening/venv/
+python/resume-screening/.env
+python/resume-screening/env*
 react/node_modules/
 spring-boot/.settings
 spring-boot/target
