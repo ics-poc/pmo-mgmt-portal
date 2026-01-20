@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Form, UploadFile, File
+from fastapi import FastAPI, Form, UploadFile, File, Depends
 from fastapi.middleware.cors import CORSMiddleware
 import pandas as pd
 import numpy as np
@@ -11,7 +11,8 @@ from sklearn.metrics.pairwise import cosine_similarity
 import re
 
 from sqlalchemy import select
-from database import SessionLocal
+from sqlalchemy.orm import Session
+from database import SessionLocal, engine
 #import models
 
 app = FastAPI()
@@ -30,7 +31,6 @@ app.add_middleware(
 
 # Load local embedding model
 model = SentenceTransformer("all-MiniLM-L6-v2")
-
 
 # --------------------------------------
 # Helpers
@@ -65,8 +65,18 @@ def embed_texts(texts):
     return embs
 
 
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
 @app.post("/match-skills/")
-async def match_skills(autoReqId: str = Form(...)):
+async def match_skills(
+    autoReqId: str = Form(...),
+    db: Session = Depends(get_db)
+    ):
     """
     Matches entered skills vs stored employee profiles in Postgres,
     including grade weighting + detailed skill depth analysis.
@@ -75,8 +85,6 @@ async def match_skills(autoReqId: str = Form(...)):
         import re
         result = None
 
-        dba: Session = SessionLocal()
-
         br_query = """
             select auto_req_id, client_name, grade, mandatory_skills from pmo.br_data 
             where auto_req_id = %s;
@@ -84,7 +92,8 @@ async def match_skills(autoReqId: str = Form(...)):
         print('***************************')
         print('autoReqId :: ' , autoReqId)
         print('***************************')
-        df_br = pd.read_sql(br_query, dba.connection(), params=(autoReqId,))
+        with engine.connect() as conn:
+            df_br = pd.read_sql(br_query, conn, params=(autoReqId,))
 
         if not df_br.empty:
             auto_req_id = df_br.loc[0, "auto_req_id"]
@@ -108,20 +117,25 @@ async def match_skills(
         auto_req_id: str = Form(...),
         client_name: str = Form(...), 
         grade: str = Form(...),
-        skills: str = Form(...)
+        skills: str = Form(...),
+        db: Session = Depends(get_db)
     ):
 
     try:
         import re
-        db: Session = SessionLocal()
         print(auto_req_id, client_name, grade, skills)
+        # db: Session = SessionLocal()
+        # df = pd.read_sql(emp_query, db.connection())
 
         # Pull employee skill data from database
         emp_query = """
             SELECT emp_no, emp_name, grade, top_3_skills, skills_bucket, detailed_skills
             FROM pmo.employees
         """
-        df = pd.read_sql(emp_query, db.connection())
+
+        with engine.connect() as conn:
+            df = pd.read_sql(emp_query, conn)
+
         df.columns = [c.strip().lower() for c in df.columns]
 
         # Combine relevant text fields
@@ -202,7 +216,7 @@ async def match_skills(
 
         weighted_scores = np.array(weighted_scores)
         # Pick top 4 profiles
-        top_idx = weighted_scores.argsort()[::-1][:15]
+        top_idx = weighted_scores.argsort()[::-1][:5]
         top_profiles = df.iloc[top_idx].reset_index(drop=True)
         top_scores = weighted_scores[top_idx]
         per_skill_top = per_skill_scores[:, top_idx]
@@ -235,7 +249,7 @@ async def match_skills(
         return {"error": str(e), "trace": traceback.format_exc()}
 
 
-        # --------------------------------------
+# --------------------------------------
 # API Endpoint: Analyze uploaded resumes
 # --------------------------------------
 @app.post("/analyze-resumes/")
@@ -301,7 +315,7 @@ async def analyze_resumes(
 
         # Sort by overall match
         all_results.sort(key=lambda x: x["Overall Match %"], reverse=True)
-        top_results = all_results[:15]
+        top_results = all_results[:5]
 
         return {
             "skills_entered": skill_list,
